@@ -8,38 +8,37 @@ import heuristic as hr
 # a, b -> alpha, beta
 # d -> recursion depth
 class PlayerAI(BaseAI):
-    def __init__(self):
-        self.nodes_expanded = 0
-
     def getMove(self, grid):
         self.time = time.clock()
 
-        for i in range(4):
-            for j in range(4):
-                grid.map[i][j] = op.log_mod[grid.map[i][j]]
-        x = op.bitify_grid_int(grid.map)
-        self.transtable = {}
-        
+        # for i in range(4):
+        #     for j in range(4):
+        #         grid.map[i][j] = min(15, op.log_mod[grid.map[i][j]])
+        # x = op.bitify_grid_int(grid.map)
+        x = grid
 
-        (move, _) = self.maximize(x, -float('inf'), float('inf'))
-        print self.nodes_expanded, self.reason, 
-        self.nodes_expanded = 0
-        return move
+        self.max_depth = 2
+        prev_move = None
+        while True:
+            self.max_depth += 1
+            (move, _) = self.maximize(x, -float('inf'), float('inf'))
+            if time.clock()-self.time < 0.18:
+                prev_move = move
+            elif prev_move is not None:
+                return prev_move
+            else:
+                from random import randint
+                moves = op.getAvailableMoves(grid)
+                return moves[randint(0, len(moves)-1)]
 
     def chance(self, s, a, b, d):
-        self.nodes_expanded += 1
-        return 0.1 * self.minimize(2, s, a, b, d) + \
-                0.9 * self.minimize(1, s, a, b, d)
+        if time.clock()-self.time>=0.18: return 0
+        return 0.1*self.minimize(2,s,a,b,d)+ 0.9*self.minimize(1,s,a,b,d)
 
     def minimize(self, new_val, s, a, b, d=0):
-        self.nodes_expanded += 1
+        if d>=self.max_depth: return hr.score_heur_board(s)
+
         cells = op.getAvailableCells(s)
-
-        if d >= 4 or (time.clock() - self.time >= 0.1):
-            self.reason = "Stack limit" if d>=4 else "Time limit"
-            # r = op.get_rows(s)
-            return hr.score_heur_board(s)
-
         minUtility = float('inf')
         for cell in cells:
             child = op.set_cell(s, cell[0], cell[1], new_val)
@@ -51,10 +50,10 @@ class PlayerAI(BaseAI):
         return minUtility
 
     def maximize(self, s, a, b, d=0):
-        self.nodes_expanded += 1
+        if time.clock()-self.time>=0.18: return (None, 0)
         moves = op.getAvailableMoves(s)
 
-        if not moves: return (None, -100000000000)
+        if not moves: return (None, -16283176000)
         (maxMove, maxUtility) = (None, -float('inf'))
         for move in moves:
             child = op.move_grid(s, move)
@@ -64,6 +63,3 @@ class PlayerAI(BaseAI):
             if maxUtility >= b: break
             if maxUtility > a: a = maxUtility
         return (maxMove, maxUtility)
-
-    def __del__(self):
-        print self.nodes_expanded

@@ -62,7 +62,6 @@ class GameManager:
 
         self.prevTime = time.clock()
 
-        count = 0
         while not self.isGameOver() and not self.over:
             # Copy to Ensure AI Cannot Change the Real Grid to Cheat
             gridCopy = self.grid.clone()
@@ -72,7 +71,7 @@ class GameManager:
             if turn == PLAYER_TURN:
                 # print "Player's Turn:",
                 move = self.playerAI.getMove(gridCopy)
-                print actionDic[move]
+                # print actionDic[move]
 
                 # Validate Move
                 if move != None and move >= 0 and move < 4:
@@ -97,10 +96,6 @@ class GameManager:
                 else:
                     print "Invalid Computer AI Move"
                     self.over = True
-
-            if not self.over and count%10==0:
-                self.displayer.display(self.grid)
-            count += 1
 
             # Exceeding the Time Allotted for Any Turn Terminates the Game
             self.updateAlarm(time.clock())

@@ -1,47 +1,36 @@
 import math
 
 # Constant time lookups
-log_mod = {0:0, 2:1, 4:2, 8:3, 16:4, 32:5, 64:6, 128:7, 256:8, 512:9,
-    1024:10, 2048:11, 4096:12, 8192:13, 16384:14}
-modlog = [2**i for i in range(20)]
-modlog[0] = 0
-index = [[60-16*i-4*j for j in range(4)] for i in range(4)]
+modlog  = [0] + [2**i for i in range(1,20)]
+log_mod = {modlog[i]:i for i in range(20)}
+index   = [[60-16*i-4*j for j in range(4)] for i in range(4)]
 
 # Converts 4 elements into 16-bit integer
-def bitify_row(g, mode=False):
-    if mode: print g
-    return (g[0]<<12) + (g[1]<<8) + (g[2]<<4) + g[3]
+bitify_row      = lambda row:  sum([(row[3-i]<<4*i) for i in range(4)])
+bitify_grid_int = lambda grid: sum([(bitify_row(grid[3-i])<<16*i) for i in range(4)])
 
-#Convert a grid map into a set of 4 16-bit rows and columns
-def bitify_grid_int(grid, mode=False):
-    if mode: print "bitify_grid_int", grid
-    r = [bitify_row(grid[i]) for i in range(4)]
-    return (r[0]<<16*3) + (r[1]<<16*2)+(r[2]<<16*1) + r[3]
+# Convert 16-bit integer to 4 elements
+debitify_row  = lambda r: [(r>>12)&0xf, (r>>8)&0xf, (r>>4)&0xf, r&0xf]
+debitify_grid = lambda g: [debitify_row(r) for r in get_rows(g)]
+
+# returns or sets g[i][j] 
+get_cell = lambda g,i,j: (g>>index[i][j])%16
+set_cell = lambda g,i,j,v: (g&~(15<<index[i][j])) | (v<<index[i][j])
+
+# returns rows or cols as 16-bit integers
+get_rows = lambda g: [(g>>16*3), (g>>16*2)%(2**16), (g>>16)%(2**16), g%(2**16)]
+get_cols = lambda g: get_rows(transpose(g))
 
 # Bit-shift convert rows to columns
 def transpose(g):
-    a1 = g & 0xF0F00F0FF0F00F0F
-    a2 = g & 0x0000F0F00000F0F0
-    a3 = g & 0x0F0F00000F0F0000
-    a = a1 | (a2 << 12) | (a3 >> 12)
-    b1 = a & 0xFF00FF0000FF00FF
-    b2 = a & 0x00FF00FF00000000
-    b3 = a & 0x00000000FF00FF00
-    return b1 | (b2 >> 24) | (b3 << 24)
+    tmasks = [0xF0F00F0FF0F00F0F, 0x0000F0F00000F0F0, 0x0F0F00000F0F0000]
+    a = [g&tmasks[i] for i in range(3)]
+    a = a[0] | (a[1]<<12) | (a[2]>>12)
+    tmasks = [0xFF00FF0000FF00FF, 0x00FF00FF00000000, 0x00000000FF00FF00]
+    b = [a&tmasks[i] for i in range(3)]
+    return b[0] | (b[1]>>24) | (b[2]<<24)
 
-# Convert 16-bit integer to 4 elements
-debitify_row = lambda g: [(g>>12)&0xf, (g>>8)&0xf, (g>>4)&0xf, g&0xf]
-# returns g[i][j]
-get_cell = lambda g,i,j: (g>>index[i][j])%16
-# returns g[i][j] = val
-set_cell = lambda g,i,j,v: (g&~(15<<index[i][j])) | (v<<index[i][j])
-
-# returns rows as 16-bit integers
-get_rows = lambda g: [(g>>16*3), (g>>16*2)%(2**16), (g>>16)%(2**16), g%(2**16)]
-# returns columns as 16-bit integers
-get_cols = lambda g: get_rows(transpose(g))
-
-# Move 4-cells to the left
+# Move 4-cells to the left and right
 def move(cells):
     i = 0
     vals = [cells[i] for i in [0,1,2,3] if cells[i] != 0]
@@ -80,6 +69,7 @@ map_exist_left  = [False]*2**16
 map_exist_right = [False]*2**16
 sort_tiles      = [0]*2**16
 empty_tiles     = [0]*2**16
+max_tiles       = [0]*2**16
 
 for g in range(65536):
     row = debitify_row(g)
@@ -94,6 +84,8 @@ for g in range(65536):
 
     sort_tiles[g]  = bitify_row(sorted(row, reverse=True))
     empty_tiles[g] = [i for i in range(4) if row[i]==0] #sum([row[i]==0 for i in range(4)])
+
+    max_tiles[g] = max(row)
 
 def getAvailableMoves(g):
     r, c = get_rows(g), get_cols(g)
