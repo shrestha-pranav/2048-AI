@@ -1,38 +1,14 @@
-from Queue import Queue
-from threading import Thread
-from time import time
+from multiprocessing import Pool
 from OptimizedGameManager import GameManager
+from time import time
 
-results = []
-class DownloadWorker(Thread):
-    def __init__(self, queue):
-        Thread.__init__(self)
-        self.queue = queue
+def f(x):
+    g = GameManager("g{0:d}".format(x))
+    res = g.start()
+    return res
 
-    def run(self):
-        while True:
-            m = self.queue.get()
-            y = m.start()
-            results.append(y)
-            self.queue.task_done()
-
-def main():
+if __name__ == '__main__':
     ts = time()
-    managers = [GameManager("g{0:d}".format(i)) for i in range(10)]
-    queue = Queue()
-
-    for x in range(4):
-        worker = DownloadWorker(queue)
-        worker.daemon = True
-        worker.start()
-
-    for mgr in managers:
-        print "Queueing {}".format(mgr.log)
-        queue.put(mgr)
-
-    queue.join()
+    p = Pool(4)
+    print p.map(f, range(12))
     print "Took {}".format(time()-ts)
-    for result in results: print result
-
-if __name__=="__main__":
-    main()
