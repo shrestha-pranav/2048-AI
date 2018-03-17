@@ -21,13 +21,13 @@ def main():
     managers = [GameManager("g{0:d}".format(i)) for i in range(10)]
     queue = Queue()
 
-    for x in range(8):
+    for x in range(4):
         worker = DownloadWorker(queue)
         worker.daemon = True
         worker.start()
 
     for mgr in managers:
-        print "Queueing {}\n".format(mgr.log)
+        print "Queueing {}".format(mgr.log)
         queue.put(mgr)
 
     queue.join()

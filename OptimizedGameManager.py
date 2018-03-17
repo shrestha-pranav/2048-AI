@@ -1,16 +1,16 @@
 from Grid       import Grid
-from ComputerAI import ComputerAI
 from PlayerAI   import PlayerAI
+from Displayer  import Displayer
 from random     import randint
 import time
 import op
 
 class GameManager:
     def __init__(self, log):
-        print "Initializing Game Manager", log
         self.log = log
         self.grid = 0
-        self.playerAI = PlayerAI()
+        self.displayer = Displayer()
+        self.playerAI  = PlayerAI()
 
     def maxTile(self):
         return max([op.max_tiles[(self.grid>>(16*i))&0xffff] for i in range(4)])
@@ -26,7 +26,6 @@ class GameManager:
         return op.set_cell(self.grid, x2, y2, self.getTile())
 
     def start(self):
-        print "Starting Game Manager", self.log
         self.grid = self.insertRandomTile()
 
         # Player AI Goes First
@@ -49,6 +48,7 @@ class GameManager:
 
             turn = 1 - turn
             count += 1
+            self.displayer.display(self.grid)
 
         print self.log, op.debitify_grid(self.grid), self.maxTile()
         return (self.log, op.debitify_grid(self.grid), self.maxTile())

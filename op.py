@@ -32,34 +32,34 @@ def transpose(g):
 
 # Move 4-cells to the left and right
 def move(cells):
-    i = 0
-    vals = [cells[i] for i in [0,1,2,3] if cells[i] != 0]
-    if len(vals) > 1:
-        i = 0
-        while i < len(vals) - 1:
-            if vals[i] == vals[i+1]:
-                vals[i] += 1
-                del vals[i+1]
-            i += 1
+    lefts , li = [0,0,0,0], 0
+    rights, ri = [0,0,0,0], 3
+    prev = 0
+    for i in [0,1,2,3]:
+        if prev==0: prev = cells[i]
+        elif prev==cells[i]:
+            lefts[li] = prev+1
+            prev, li  = 0, li+1
+        else:
+            lefts[li] = prev
+            prev, li  = cells[i], li+1
+    if prev != 0 : lefts[li] = prev
 
-    lefts = [vals[i] if i<len(vals) else 0 for i in range(4)]
+    prev=0
+    for i in [3,2,1,0]:
+        if prev==0:
+            prev = cells[i]
+        elif prev==cells[i]:
+            rights[ri], prev, ri = prev+1, 0, ri-1
+        else:
+            rights[ri], prev, ri = prev, cells[i], ri-1
+    if prev !=0 : rights[ri] = prev
 
-    vals = [cells[i] for i in [3,2,1,0] if cells[i] != 0]
-    if len(vals)>1:
-        i=0
-        while i<len(vals) - 1:
-            if vals[i] == vals[i+1]:
-                vals[i] += 1
-                del vals[i+1]
-            i += 1
-    right = [vals[i] if i<len(vals) else 0 for i in range(4)]
-    right = [right[3], right[2], right[1], right[0]]
-
-    left_exist, right_exist = False, False
+    left, right = False, False
     for i in range(4):
-        if cells[i] != lefts[i]: left_exist = lefts
-        if cells[i] != right[i]: right_exist = right
-    return left_exist, right_exist
+        if cells[i] != lefts[i] : left = lefts
+        if cells[i] != rights[i]: right = rights
+    return left, right
 
 
 # Generate constant-time lookups for row optimization
@@ -80,7 +80,7 @@ for g in range(65536):
     map_exist_right[g] = (tmp2 is not False)
 
     map_left[g]  = bitify_row(tmp1) if map_exist_left[g] else g
-    map_right[g] = bitify_row(tmp2) if map_exist_right[g] else bitify_row(rev_row)
+    map_right[g] = bitify_row(tmp2) if map_exist_right[g] else g
 
     sort_tiles[g]  = bitify_row(sorted(row, reverse=True))
     empty_tiles[g] = [i for i in range(4) if row[i]==0] #sum([row[i]==0 for i in range(4)])
@@ -105,9 +105,10 @@ def getAvailableCells(g):
     return cells
 
 def move_grid(g, move):
-    c = get_cols(g) if move<2 else get_rows(g)
-    m = map_left if move%2==0 else map_right
+    if move < 2: 
+        return transpose(move_grid(transpose(g), move+2))
 
-    res = (m[c[0]]<<48) + (m[c[1]]<<32) + (m[c[2]]<<16) + (m[c[3]])
-    if move<2: res = transpose(res) 
-    return res
+    m = map_right if move==3 else map_left
+    r = get_rows(g)
+    
+    return (m[r[0]]<<48) + (m[r[1]]<<32) + (m[r[2]]<<16) + (m[r[3]])

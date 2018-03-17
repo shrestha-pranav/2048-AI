@@ -1,6 +1,8 @@
 from BaseDisplayer import BaseDisplayer
 import platform
 import os
+import op
+from Grid import Grid
 
 colorMap = {
     0     : 97 ,
@@ -22,6 +24,9 @@ colorMap = {
     65536 : 101,
 }
 
+listMap =  colorMap.items() + [(op.log_mod[k],v) for (k,v) in colorMap.items() if op.log_mod[k] not in colorMap]
+colorMap = {k:v for (k,v) in listMap}
+
 cTemp = "\x1b[%dm%7s\x1b[0m "
 
 class Displayer(BaseDisplayer):
@@ -42,9 +47,12 @@ class Displayer(BaseDisplayer):
         print ""
 
     def unixDisplay(self, grid):
-        for i in xrange(3 * grid.size):
-            for j in xrange(grid.size):
-                v = grid.map[i / 3][j]
+        for i in xrange(3 * 4):
+            for j in xrange(4):
+                if isinstance(grid, Grid):
+                    v = grid.map[i / 3][j]
+                else:
+                    v = op.get_cell(grid, i/3, j)
 
                 if i % 3 == 1:
                     string = str(v).center(7, " ")
