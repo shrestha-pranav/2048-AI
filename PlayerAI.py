@@ -1,10 +1,8 @@
-from random import randint
 from BaseAI import BaseAI
-from Grid import Grid
+from random import randint
 import op
 import time
 import heuristic as hr
-from random import randint
 
 # s -> current state
 # a, b -> alpha, beta
@@ -14,18 +12,16 @@ class PlayerAI(BaseAI):
     def getMove(self, grid):
         self.time = time.clock()
 
-        if isinstance(grid, int) or isinstance(grid, long):
-            x = grid
-        else:
-            for i in range(4):
-                for j in range(4):
-                    grid.map[i][j] = min(15, op.log_mod[grid.map[i][j]])
-            x = op.bitify_grid(grid.map)
+        # Convert grid to a single 64-bit integer
+        for i in range(4):
+            for j in range(4):
+                grid.map[i][j] = min(15, op.log_mod[grid.map[i][j]])
+        x = op.bitify_grid(grid.map)
 
-        self.max_depth = 2
 
         #Implementing a IDS to hopefully save time
         prev_move = None
+        self.max_depth = 2
         while True:
             self.max_depth += 1
             (move, _) = self.maximize(x, -float('inf'), float('inf'), 0, 0)
@@ -40,29 +36,31 @@ class PlayerAI(BaseAI):
     def chance(self, s, a, b, d, p):
         if time.clock()-self.time>=0.18: return 0
 
-        # Unlikely getting >three 4's in a row
+        # Unlikely getting more than three 4's in a row
         if p==3: return self.minimize(1,s,a,b,d,p)
         return 0.1*self.minimize(2,s,a,b,d,p+1)+ 0.9*self.minimize(1,s,a,b,d,p)
 
     def minimize(self, new_val, s, a, b, d, p):
         if d>=self.max_depth: return hr.eval(s)
 
-        cells = op.getAvailableCells(s)
         minUtility = float('inf')
-        for cell in cells:
-            child = op.set_cell(s, cell[0], cell[1], new_val)
-            (_, utility) = self.maximize(child, a, b, d, p)
+        r = op.get_rows(s)
+        for x in range(4):
+            for y in op.empty_tiles[r[x]]:
+                child = op.set_cell(s, x, y, new_val)
+                (_, utility) = self.maximize(child, a, b, d, p)
 
-            if utility < minUtility: minUtility = utility
-            if minUtility <= a: break
-            if minUtility < b: b = minUtility
+                if utility < minUtility: minUtility = utility
+                if minUtility <= a: break
+                if minUtility < b: b = minUtility
         return minUtility
 
     def maximize(self, s, a, b, d, p):
         if time.clock()-self.time>=0.18: return (None, 0)
+        
         moves = op.getAvailableMoves(s)
-
         if not moves: return (None, -16283176000)
+
         (maxMove, maxUtility) = (None, -float('inf'))
         for move in moves:
             child = op.move_grid(s, move)

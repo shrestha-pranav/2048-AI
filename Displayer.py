@@ -47,7 +47,6 @@ class Displayer(BaseDisplayer):
         print ""
 
     def unixDisplay(self, grid):
-        return
         for i in xrange(3 * 4):
             for j in xrange(4):
                 if isinstance(grid, Grid):
