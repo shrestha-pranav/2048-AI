@@ -7,12 +7,14 @@ corners     = [0] * 2**16
 # Evaluation function sums over every row and column
 eval  = lambda g: eval2(g) + eval2(op.transpose(g)) + 100 * corn(g)
 eval2 = lambda g: sum([heuristics[(g>>16*i)&0xffff] for i in [0,1,2,3]])
-corn  = lambda g: max(corners[g>>16*3], corners[g%(2**16)])
+corn  = lambda g: max(corners[g>>48], corners[g%(2**16)]) # Bonus for corner tile
 
 # Monotonicity and max tile bonus settings
-mono_wts = [[i**4-j**4 if i>j else 0 for i in range(20)] for j in range(20)]
-maxwts = [0]*10 + [3.3, 10.0, 33.3, 100.0, 333.3, 1000.0]
+maxwts     = [0]*10 + [3.3, 10.0, 33.3, 100.0, 333.3, 1000.0]
+mono_wts   = [[i**4-j**4 if i>j else 0 for i in range(20)] for j in range(20)]
 
+
+# Pre-compute heuristics to save time
 for i in range(65536):
     r = op.debitify_row(i)
 

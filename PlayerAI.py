@@ -20,7 +20,7 @@ class PlayerAI(BaseAI):
             for i in range(4):
                 for j in range(4):
                     grid.map[i][j] = min(15, op.log_mod[grid.map[i][j]])
-            x = op.bitify_grid_int(grid.map)
+            x = op.bitify_grid(grid.map)
 
         self.max_depth = 2
 
